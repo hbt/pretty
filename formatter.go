@@ -2,12 +2,11 @@ package pretty
 
 import (
 	"fmt"
+	"github.com/kr/text"
 	"io"
 	"reflect"
 	"strconv"
 	"text/tabwriter"
-
-	"github.com/kr/text"
 )
 
 type formatter struct {
@@ -223,12 +222,23 @@ func (p *printer) printValue(v reflect.Value, showType, quote bool) {
 			pp = p.indent()
 		}
 		for i := 0; i < v.Len(); i++ {
-			showTypeInSlice := t.Elem().Kind() == reflect.Interface
-			pp.printValue(v.Index(i), showTypeInSlice, true)
+			p2 := pp
 			if expand {
-				io.WriteString(pp, ",\n")
+				format := "%" + strconv.Itoa(len(strconv.Itoa(v.Len()))) + "d"
+				strIndex := fmt.Sprintf(format, i)
+				io.WriteString(p2, strIndex)
+				//io.WriteString(p2, "[" + strIndex + "]")
+				p2 = p2.indent()
+			}
+			showTypeInSlice := t.Elem().Kind() == reflect.Interface
+			p2.printValue(v.Index(i), showTypeInSlice, true)
+			if expand {
+				io.WriteString(p2, ",\n")
 			} else if i < v.Len()-1 {
-				io.WriteString(pp, ", ")
+				io.WriteString(p2, ", ")
+			}
+			if expand {
+				p2.tw.Flush()
 			}
 		}
 		if expand {
